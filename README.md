@@ -6,10 +6,14 @@
 ## 구성 요소
 
 - `PROJECT.md`: 프로젝트 배경/목표/가치/기술 스택/로드맵
-- `ARCHITECTURE.md`: Alertmanager → backend → Slack 및 frontend 흐름 요약
+- `ARCHITECTURE.md`: 현재(as-is) Alertmanager → Backend → Slack 흐름 및 Agent/Frontend 연동 상태 요약
+- `diagrams/`: 목표(to-be) 아키텍처 다이어그램(Mermaid 기반, 구현/계획 구분 표기)
 - `../backend/`: Go 1.22 + Gin 기반 API 서버
-  - Alertmanager 웹훅(`POST /webhook/alertmanager`) 수신 후 Slack으로 알림 전송
+  - Alertmanager 웹훅(`POST /webhook/alertmanager`) 수신 후 Slack 알림 전송(스레드 처리 포함)
+- `../agent/`: Go 1.22 + Gin 기반 분석 엔진 API(placeholder 응답)
+  - `POST /analyze/alertmanager`
 - `../frontend/`: React 18 + TypeScript + Vite + Tailwind CSS 기반 대시보드 UI
+  - `GET /api/rca` 호출을 시도하며 개발 환경에서 mock 데이터로 fallback
 - `../helm-charts/`: Argo CD, kube-prometheus-stack, Loki, PostgreSQL 및 `kube-rca` 배포용 Helm
   차트/values
   - `../helm-charts/charts/kube-rca/README.md`: `kube-rca` 차트 문서

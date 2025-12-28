@@ -6,15 +6,21 @@
 ## 구성 요소
 
 - `PROJECT.md`: 프로젝트 배경/목표/가치/기술 스택/로드맵
-- `ARCHITECTURE.md`: 현재(as-is) Alertmanager → Backend → Slack 흐름 및 Agent/Frontend 연동 상태 요약
+- `ARCHITECTURE.md`: 현재(as-is) Alertmanager/Slack/Agent/Auth 흐름 요약
 - `diagrams/`: 목표(to-be) 아키텍처 다이어그램(Mermaid 기반, 구현/계획 구분 표기)
-- `../backend/`: Go 1.22 + Gin 기반 API 서버
+  - `system_context_diagram.md`
+  - `sequence_diagram.md`
+  - `login_sequence_diagram.md`
+  - `entity_relationship_diagram.md`
+- `../backend/`: Go + Gin 기반 API 서버
   - Alertmanager 웹훅(`POST /webhook/alertmanager`) 수신 후 Slack 알림 전송(스레드 처리 포함)
-- `../agent/`: Go 1.22 + Gin 기반 분석 엔진 API(placeholder 응답)
-  - `POST /analyze/alertmanager`
+  - 인증/인시던트/임베딩 API(`POST /api/v1/auth/*`, `GET /api/v1/incidents`, `POST /api/v1/embeddings`)
+  - OpenAPI 문서 엔드포인트: `GET /openapi.json`
+- `../agent/`: Python FastAPI 기반 분석 엔진 API
+  - `POST /analyze` (Strands Agents + K8s/Prometheus 컨텍스트)
 - `../frontend/`: React 18 + TypeScript + Vite + Tailwind CSS 기반 대시보드 UI
-  - `GET /api/rca` 호출을 시도하며 개발 환경에서 mock 데이터로 fallback
-- `../helm-charts/`: Argo CD, kube-prometheus-stack, Loki, PostgreSQL 및 `kube-rca` 배포용 Helm
+  - 로그인/회원가입 + RCA 리스트/상세 화면
+- `../helm-charts/`: Argo CD, kube-prometheus-stack, Loki, PostgreSQL, ingress-nginx 및 `kube-rca` 배포용 Helm
   차트/values
   - `../helm-charts/charts/kube-rca/README.md`: `kube-rca` 차트 문서
 - `../k8s-resources/`: Argo CD Applications 및 External Secrets Operator 리소스
@@ -33,6 +39,14 @@ go run .
 ```bash
 cd backend
 go test ./...
+```
+
+### Agent
+
+```bash
+cd agent
+make install
+make run
 ```
 
 ### Frontend
@@ -69,7 +83,9 @@ helm upgrade --install -n argocd argo-applications charts/argo-applications \
 
 ## 설정(시크릿/환경변수)
 
-- Backend는 Slack 전송을 위해 환경변수 `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`를 사용합니다.
+- Backend Slack 연동: `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`
+- Backend 인증: `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ALLOW_SIGNUP`, `AUTH_COOKIE_*`
+- Backend 임베딩: `AI_API_KEY`
 - External Secrets 관련 리소스는 `../k8s-resources/external-secrets/`에서 관리합니다.
 
 ## Git/커밋 단위

@@ -9,7 +9,7 @@
 - `ARCHITECTURE.md`: 현재(as-is) Alertmanager/Slack/Agent/Auth 흐름 요약
 - `diagrams/`: 목표(to-be) 아키텍처 다이어그램(Mermaid 기반, 구현/계획 구분 표기)
   - `system_context_diagram.md`
-  - `sequence_diagram.md`
+  - `alert_analysis_sequence_diagram.md`
   - `login_sequence_diagram.md`
   - `entity_relationship_diagram.md`
 - `../backend/`: Go + Gin 기반 API 서버

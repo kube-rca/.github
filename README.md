@@ -18,6 +18,7 @@
   - OpenAPI 문서 엔드포인트: `GET /openapi.json`
 - `../agent/`: Python FastAPI 기반 분석 엔진 API
   - `POST /analyze` (Strands Agents + K8s/Prometheus 컨텍스트)
+  - SESSION_DB 설정 시 Strands 세션 저장(PostgreSQL)
 - `../frontend/`: React 18 + TypeScript + Vite + Tailwind CSS 기반 대시보드 UI
   - 로그인/회원가입 + RCA 리스트/상세 화면
 - `../helm-charts/`: Argo CD, kube-prometheus-stack, Loki, PostgreSQL, ingress-nginx 및 `kube-rca` 배포용 Helm
@@ -86,6 +87,8 @@ helm upgrade --install -n argocd argo-applications charts/argo-applications \
 - Backend Slack 연동: `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`
 - Backend 인증: `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ALLOW_SIGNUP`, `AUTH_COOKIE_*`
 - Backend 임베딩: `AI_API_KEY`
+- Agent Gemini: `GEMINI_API_KEY`
+- Agent 세션 저장(옵션): `SESSION_DB_HOST`, `SESSION_DB_PORT`, `SESSION_DB_NAME`, `SESSION_DB_USER`, `SESSION_DB_PASSWORD`
 - External Secrets 관련 리소스는 `../k8s-resources/external-secrets/`에서 관리합니다.
 
 ## Git/커밋 단위

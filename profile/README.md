@@ -3,6 +3,8 @@
 이 워크스페이스는 Kubernetes 환경에서 발생하는 알림을 수집/전달하고, UI로 확인하기 위한 구성 요소들을
 디렉터리 단위(여러 Git 리포지토리)로 관리합니다.
 
+![KubeRCA Logo](../img/Kube-RCA-Logo.png)
+
 ## 구성 요소
 
 - `../PROJECT.md`: 프로젝트 배경/목표/가치/기술 스택/로드맵
@@ -91,8 +93,6 @@ helm upgrade --install -n argocd argo-applications charts/argo-applications \
 - Agent Gemini: `GEMINI_API_KEY`
 - Agent 세션 저장(옵션): `SESSION_DB_HOST`, `SESSION_DB_PORT`, `SESSION_DB_NAME`, `SESSION_DB_USER`, `SESSION_DB_PASSWORD`
 - External Secrets 관련 리소스는 `../../k8s-resources/external-secrets/`에서 관리합니다.
-
-![KubeRCA Logo](../img/Kube-RCA-Logo.png)
 
 ## Git/커밋 단위
 

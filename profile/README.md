@@ -8,8 +8,8 @@
 ## 구성 요소
 
 - `../PROJECT.md`: 프로젝트 배경/목표/가치/기술 스택/로드맵
-- `../ARCHITECTURE.md`: 현재(as-is) Alertmanager/Slack/Agent/Auth 흐름 요약
-- `../diagrams/`: 목표(to-be) 아키텍처 다이어그램(Mermaid 기반, 구현/계획 구분 표기)
+- `../ARCHITECTURE.md`: Alertmanager/Slack/Agent/Auth 흐름 요약
+- `../diagrams/`: 아키텍처 다이어그램(Mermaid 기반)
   - `../diagrams/system_context_diagram.md`
   - `../diagrams/alert_analysis_sequence_diagram.md`
   - `../diagrams/incident_analysis_sequence_diagram.md`

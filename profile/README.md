@@ -12,6 +12,7 @@
 - `../diagrams/`: 목표(to-be) 아키텍처 다이어그램(Mermaid 기반, 구현/계획 구분 표기)
   - `../diagrams/system_context_diagram.md`
   - `../diagrams/alert_analysis_sequence_diagram.md`
+  - `../diagrams/incident_analysis_sequence_diagram.md`
   - `../diagrams/login_sequence_diagram.md`
   - `../diagrams/entity_relationship_diagram.md`
 - `../img/`: 로고/이미지 리소스

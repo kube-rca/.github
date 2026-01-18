@@ -17,13 +17,14 @@
 - `../img/`: 로고/이미지 리소스
 - `../../backend/`: Go + Gin 기반 API 서버
   - Alertmanager 웹훅(`POST /webhook/alertmanager`) 수신 후 Slack 알림 전송(스레드 처리 포함)
-  - 인증/인시던트/임베딩 API(`POST /api/v1/auth/*`, `GET /api/v1/incidents`, `POST /api/v1/embeddings`)
+  - 인증/인시던트/알림/임베딩 API(`POST /api/v1/auth/*`, `GET /api/v1/incidents*`, `GET /api/v1/alerts*`, `POST /api/v1/embeddings*`)
+  - 인시던트 숨김/복원(`PATCH /api/v1/incidents/:id`, `PATCH /api/v1/incidents/:id/unhide`, `GET /api/v1/incidents/hidden`)
   - OpenAPI 문서 엔드포인트: `GET /openapi.json`
 - `../../agent/`: Python FastAPI 기반 분석 엔진 API
-  - `POST /analyze` (Strands Agents + K8s/Prometheus 컨텍스트)
+  - `POST /analyze`, `POST /summarize-incident` (Strands Agents + K8s/Prometheus 컨텍스트)
   - SESSION_DB 설정 시 Strands 세션 저장(PostgreSQL)
 - `../../frontend/`: React 18 + TypeScript + Vite + Tailwind CSS 기반 대시보드 UI
-  - 로그인/회원가입 + RCA 리스트/상세 화면
+  - 로그인/회원가입 + RCA/Alert 리스트/상세 + 숨김(뮤트) 인시던트 화면
 - `../../helm-charts/`: Argo CD, kube-prometheus-stack, Loki, PostgreSQL, ingress-nginx 및 `kube-rca` 배포용 Helm
   차트/values
   - `../../helm-charts/charts/kube-rca/README.md`: `kube-rca` 차트 문서

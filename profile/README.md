@@ -1,102 +1,300 @@
-# KubeRCA 프로젝트 안내
+<p align="center">
+  <img src="../img/Kube-RCA-Logo-NoBG.png" alt="KubeRCA Logo" width="200"/>
+</p>
 
-이 워크스페이스는 Kubernetes 환경에서 발생하는 알림을 수집/전달하고, UI로 확인하기 위한 구성 요소들을
-디렉터리 단위(여러 Git 리포지토리)로 관리합니다.
+<h1 align="center">KubeRCA</h1>
 
-![KubeRCA Logo](../img/Kube-RCA-Logo.png)
+<p align="center">
+  <strong>AI-Powered Kubernetes Incident Analysis & Root Cause Analysis Tool</strong>
+</p>
 
-## 구성 요소
+<p align="center">
+  <img src="https://img.shields.io/badge/Go-1.24-00ADD8?style=flat-square&logo=go" alt="Go">
+  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React">
+  <img src="https://img.shields.io/badge/Helm-3-0F1689?style=flat-square&logo=helm" alt="Helm">
+  <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License">
+</p>
 
-- `../PROJECT.md`: 프로젝트 배경/목표/가치/기술 스택/로드맵
-- `../ARCHITECTURE.md`: Alertmanager/Slack/Agent/Auth 흐름 요약
-- `../diagrams/`: 아키텍처 다이어그램(Mermaid 기반)
-  - `../diagrams/system_context_diagram.md`
-  - `../diagrams/alert_analysis_sequence_diagram.md`
-  - `../diagrams/incident_analysis_sequence_diagram.md`
-  - `../diagrams/login_sequence_diagram.md`
-  - `../diagrams/entity_relationship_diagram.md`
-- `../img/`: 로고/이미지 리소스
-- `../../backend/`: Go + Gin 기반 API 서버
-  - Alertmanager 웹훅(`POST /webhook/alertmanager`) 수신 후 Slack 알림 전송(스레드 처리 포함)
-  - 인증/인시던트/알림/임베딩 API(`POST /api/v1/auth/*`, `GET /api/v1/incidents*`, `GET /api/v1/alerts*`, `POST /api/v1/embeddings*`)
-  - 인시던트 숨김/복원(`PATCH /api/v1/incidents/:id`, `PATCH /api/v1/incidents/:id/unhide`, `GET /api/v1/incidents/hidden`)
-  - OpenAPI 문서 엔드포인트: `GET /openapi.json`
-- `../../agent/`: Python FastAPI 기반 분석 엔진 API
-  - `POST /analyze`, `POST /summarize-incident` (Strands Agents + K8s/Prometheus 컨텍스트)
-  - SESSION_DB 설정 시 Strands 세션 저장(PostgreSQL)
-- `../../frontend/`: React 18 + TypeScript + Vite + Tailwind CSS 기반 대시보드 UI
-  - 로그인/회원가입 + RCA/Alert 리스트/상세 + 숨김(뮤트) 인시던트 화면
-- `../../helm-charts/`: Argo CD, kube-prometheus-stack, Loki, PostgreSQL, ingress-nginx 및 `kube-rca` 배포용 Helm
-  차트/values
-  - `../../helm-charts/charts/kube-rca/README.md`: `kube-rca` 차트 문서
-- `../../k8s-resources/`: Argo CD Applications 및 External Secrets Operator 리소스
-- `../../terraform/`: Terraform Cloud 기반 인프라 코드(예: `terraform/envs/dev/`)
+---
 
-## 로컬 개발
+## Overview
 
-### Backend
+KubeRCA is an open-source tool that automatically collects incident context from Kubernetes environments and provides **Root Cause Analysis (RCA)** and response guides using LLM.
+
+When alerts fire in your cluster, KubeRCA:
+1. Receives alerts via Alertmanager webhook
+2. Collects relevant logs, metrics, and Kubernetes events
+3. Analyzes the context using AI (Gemini/Strands Agents)
+4. Provides RCA summaries and recommended actions
+5. Searches similar past incidents for reference
+
+---
+
+## Features
+
+- **Automated Context Collection** - Gather logs, metrics, and K8s events when alerts fire
+- **AI-Powered Analysis** - LLM-based root cause analysis with Strands Agents (Gemini)
+- **Similar Incident Search** - Vector similarity search using pgvector
+- **Slack Integration** - Real-time notifications with threaded analysis results
+- **Web Dashboard** - React-based UI for incident management
+- **Helm Deployment** - Easy installation via Helm charts
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+  %% External
+  AM[Alertmanager]
+  SL[Slack]
+  LLM[Gemini API]
+  PR[Prometheus]
+  K8S[Kubernetes API]
+
+  %% Internal
+  subgraph KubeRCA
+    FE[Frontend<br/>React + TypeScript]
+    BE[Backend<br/>Go + Gin]
+    AG[Agent<br/>Python + FastAPI]
+    PG[(PostgreSQL<br/>+ pgvector)]
+  end
+
+  AM -->|Webhook| BE
+  BE -->|Notification| SL
+  FE -->|REST API| BE
+  BE -->|Analyze Request| AG
+  AG -->|K8s Context| K8S
+  AG -->|Metrics Query| PR
+  AG -->|LLM Analysis| LLM
+  BE -->|Embeddings| LLM
+  BE <-->|Data| PG
+  AG -.->|Session| PG
+```
+
+### Component Flow
+
+| Step | Description |
+|------|-------------|
+| 1 | Alertmanager sends alerts to Backend via webhook |
+| 2 | Backend creates/updates Incident and stores Alert |
+| 3 | Backend sends Slack notification (with thread tracking) |
+| 4 | Backend requests analysis from Agent (async) |
+| 5 | Agent collects K8s/Prometheus context |
+| 6 | Agent performs LLM analysis via Strands Agents |
+| 7 | Backend stores analysis results and sends to Slack thread |
+| 8 | Frontend displays incidents with similar incident search |
+
+---
+
+## Tech Stack
+
+### Application
+| Component | Technology |
+|-----------|------------|
+| **Backend** | Go 1.24 + Gin |
+| **Agent** | Python 3.10+ + FastAPI + Strands Agents |
+| **Frontend** | React 18 + TypeScript + Vite + Tailwind CSS |
+| **Database** | PostgreSQL + pgvector |
+
+### Infrastructure & Observability
+| Category | Technology |
+|----------|------------|
+| **Deployment** | Helm, ArgoCD |
+| **IaC** | Terraform |
+| **Monitoring** | Prometheus, Alertmanager, Grafana |
+| **Logging** | Loki, Grafana Alloy |
+| **AI/LLM** | Google Gemini API |
+
+### Testing
+| Category | Technology |
+|----------|------------|
+| **Chaos Engineering** | Chaos Mesh |
+| **Load Testing** | k6 |
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Kubernetes cluster (1.25+)
+- Helm 3.x
+- PostgreSQL with pgvector extension
+- Gemini API key
+
+### Installation via Helm
+
+```bash
+# Add the chart repository (if published) or use local charts
+helm repo add kube-rca https://your-chart-repo.example.com
+helm repo update
+
+# Install with minimal configuration
+helm install kube-rca kube-rca/kube-rca \
+  --namespace kube-rca \
+  --create-namespace \
+  --set agent.gemini.secret.existingSecret=your-gemini-secret \
+  --set backend.postgresql.host=your-postgres-host
+```
+
+### Installation from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/kube-rca.git
+cd kube-rca/helm-charts
+
+# Install the chart
+helm install kube-rca charts/kube-rca \
+  --namespace kube-rca \
+  --create-namespace \
+  -f your-values.yaml
+```
+
+### Minimal values.yaml Example
+
+```yaml
+# Backend configuration
+backend:
+  postgresql:
+    host: "postgresql.kube-rca.svc.cluster.local"
+    database: "kube-rca"
+    user: "kube-rca"
+    secret:
+      existingSecret: "postgresql"
+      key: "password"
+  slack:
+    enabled: true
+    secret:
+      existingSecret: "kube-rca-slack"
+  auth:
+    admin:
+      username: "admin"
+      password: "changeme"
+
+# Agent configuration
+agent:
+  gemini:
+    secret:
+      existingSecret: "kube-rca-ai"
+      key: "ai-studio-api-key"
+  prometheus:
+    url: "http://prometheus-server.monitoring:9090"
+
+# Frontend configuration
+frontend:
+  ingress:
+    enabled: true
+    hosts:
+      - kube-rca.example.com
+```
+
+### Configure Alertmanager
+
+Add the KubeRCA webhook receiver to your Alertmanager configuration:
+
+```yaml
+receivers:
+  - name: 'kube-rca'
+    webhook_configs:
+      - url: 'http://kube-rca-backend.kube-rca:8080/webhook/alertmanager'
+        send_resolved: true
+
+route:
+  receiver: 'kube-rca'
+  # or add as a child route
+```
+
+---
+
+## Configuration
+
+### Backend Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string | Yes |
+| `SLACK_BOT_TOKEN` | Slack Bot OAuth token | Yes (if Slack enabled) |
+| `SLACK_CHANNEL_ID` | Slack channel for notifications | Yes (if Slack enabled) |
+| `JWT_SECRET` | JWT signing secret | Yes |
+| `AI_API_KEY` | Gemini API key for embeddings | Yes |
+| `AGENT_URL` | Agent service URL | Yes |
+
+### Agent Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GEMINI_API_KEY` | Gemini API key for Strands Agents | Yes |
+| `PROMETHEUS_URL` | Prometheus base URL | No |
+| `SESSION_DB_HOST` | PostgreSQL host for session storage | No |
+
+For full configuration options, see the [Helm chart values](../../helm-charts/charts/kube-rca/README.md).
+
+---
+
+## Local Development
+
+### Backend (Go)
 
 ```bash
 cd backend
 go mod tidy
 go run .
-```
-
-```bash
-cd backend
+# or
 go test ./...
 ```
 
-### Agent
+### Agent (Python)
 
 ```bash
 cd agent
-make install
-make run
+make install   # uv sync
+make lint      # ruff check
+make test      # pytest
+make run       # uvicorn dev server
 ```
 
-### Frontend
+### Frontend (React)
 
 ```bash
 cd frontend
 npm ci
-npm run dev
+npm run dev    # development server
+npm run build  # production build
+npm run lint   # eslint
 ```
 
-```bash
-cd frontend
-npm run build
-npm run lint
-```
+---
 
-## 배포(Helm)
+## Documentation
 
-KubeRCA는 `helm-charts/charts/argo-applications`(App-of-Apps) 차트 기반으로 배포합니다.
-즉, `argo-applications` 설치 이후에는 Argo CD가 하위 Application(`kube-rca`, `kube-prometheus-stack`,
-`alloy`, `loki`, `db` 등)을 선언적으로 관리합니다.
+- [Architecture Details](../ARCHITECTURE.md)
+- [Project Background](../PROJECT.md)
+- [Helm Chart Values](../../helm-charts/charts/kube-rca/README.md)
+- [Sequence Diagrams](../diagrams/)
 
-```bash
-cd helm-charts
+---
 
-# Argo CD
-helm upgrade --install -n argocd argocd charts/argo-cd \
-  -f charts/argo-cd/kube-rca-values.yaml
+## Contributing
 
-# App-of-Apps (kube-rca 및 관측성 스택/DB 포함)
-helm upgrade --install -n argocd argo-applications charts/argo-applications \
-  -f charts/argo-applications/kube-rca-values.yaml
-```
+Contributions are welcome! Please read our contributing guidelines before submitting PRs.
 
-## 설정(시크릿/환경변수)
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- Backend Slack 연동: `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`
-- Backend 인증: `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ALLOW_SIGNUP`, `AUTH_COOKIE_*`
-- Backend 임베딩: `AI_API_KEY`
-- Agent Gemini: `GEMINI_API_KEY`
-- Agent 세션 저장(옵션): `SESSION_DB_HOST`, `SESSION_DB_PORT`, `SESSION_DB_NAME`, `SESSION_DB_USER`, `SESSION_DB_PASSWORD`
-- External Secrets 관련 리소스는 `../../k8s-resources/external-secrets/`에서 관리합니다.
+---
 
-## Git/커밋 단위
+## License
 
-이 워크스페이스는 디렉터리 단위로 여러 Git 리포지토리를 포함합니다.
-변경한 디렉터리(예: `backend/`, `frontend/`)에서 커밋을 진행합니다.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](../../LICENSE) file for details.
+
+---
+
+<p align="center">
+  Made with dedication for the Kubernetes community
+</p>

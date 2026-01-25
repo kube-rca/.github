@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../img/Kube-RCA-Logo-NoBG.png" alt="KubeRCA Logo" width="200"/>
+  <img src="https://raw.githubusercontent.com/kube-rca/.github/main/img/Kube-RCA-Logo-NoBG.png" alt="KubeRCA Logo" width="200"/>
 </p>
 
 <h1 align="center">KubeRCA</h1>
@@ -23,6 +23,7 @@
 KubeRCA is an open-source tool that automatically collects incident context from Kubernetes environments and provides **Root Cause Analysis (RCA)** and response guides using LLM.
 
 When alerts fire in your cluster, KubeRCA:
+
 1. Receives alerts via Alertmanager webhook
 2. Collects relevant logs, metrics, and Kubernetes events
 3. Analyzes the context using AI (Gemini/Strands Agents)
@@ -75,43 +76,46 @@ flowchart LR
 
 ### Component Flow
 
-| Step | Description |
-|------|-------------|
-| 1 | Alertmanager sends alerts to Backend via webhook |
-| 2 | Backend creates/updates Incident and stores Alert |
-| 3 | Backend sends Slack notification (with thread tracking) |
-| 4 | Backend requests analysis from Agent (async) |
-| 5 | Agent collects K8s/Prometheus context |
-| 6 | Agent performs LLM analysis via Strands Agents |
-| 7 | Backend stores analysis results and sends to Slack thread |
-| 8 | Frontend displays incidents with similar incident search |
+| Step | Description                                               |
+| ---- | --------------------------------------------------------- |
+| 1    | Alertmanager sends alerts to Backend via webhook          |
+| 2    | Backend creates/updates Incident and stores Alert         |
+| 3    | Backend sends Slack notification (with thread tracking)   |
+| 4    | Backend requests analysis from Agent (async)              |
+| 5    | Agent collects K8s/Prometheus context                     |
+| 6    | Agent performs LLM analysis via Strands Agents            |
+| 7    | Backend stores analysis results and sends to Slack thread |
+| 8    | Frontend displays incidents with similar incident search  |
 
 ---
 
 ## Tech Stack
 
 ### Application
-| Component | Technology |
-|-----------|------------|
-| **Backend** | Go 1.24 + Gin |
-| **Agent** | Python 3.10+ + FastAPI + Strands Agents |
+
+| Component    | Technology                                  |
+| ------------ | ------------------------------------------- |
+| **Backend**  | Go 1.24 + Gin                               |
+| **Agent**    | Python 3.10+ + FastAPI + Strands Agents     |
 | **Frontend** | React 18 + TypeScript + Vite + Tailwind CSS |
-| **Database** | PostgreSQL + pgvector |
+| **Database** | PostgreSQL + pgvector                       |
 
 ### Infrastructure & Observability
-| Category | Technology |
-|----------|------------|
-| **Deployment** | Helm, ArgoCD |
-| **IaC** | Terraform |
+
+| Category       | Technology                        |
+| -------------- | --------------------------------- |
+| **Deployment** | Helm, ArgoCD                      |
+| **IaC**        | Terraform                         |
 | **Monitoring** | Prometheus, Alertmanager, Grafana |
-| **Logging** | Loki, Grafana Alloy |
-| **AI/LLM** | Google Gemini API |
+| **Logging**    | Loki, Grafana Alloy               |
+| **AI/LLM**     | Google Gemini API                 |
 
 ### Testing
-| Category | Technology |
-|----------|------------|
+
+| Category              | Technology |
+| --------------------- | ---------- |
 | **Chaos Engineering** | Chaos Mesh |
-| **Load Testing** | k6 |
+| **Load Testing**      | k6         |
 
 ---
 
@@ -197,13 +201,13 @@ Add the KubeRCA webhook receiver to your Alertmanager configuration:
 
 ```yaml
 receivers:
-  - name: 'kube-rca'
+  - name: "kube-rca"
     webhook_configs:
-      - url: 'http://kube-rca-backend.kube-rca:8080/webhook/alertmanager'
+      - url: "http://kube-rca-backend.kube-rca:8080/webhook/alertmanager"
         send_resolved: true
 
 route:
-  receiver: 'kube-rca'
+  receiver: "kube-rca"
   # or add as a child route
 ```
 
@@ -213,22 +217,22 @@ route:
 
 ### Backend Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `SLACK_BOT_TOKEN` | Slack Bot OAuth token | Yes (if Slack enabled) |
+| Variable           | Description                     | Required               |
+| ------------------ | ------------------------------- | ---------------------- |
+| `DATABASE_URL`     | PostgreSQL connection string    | Yes                    |
+| `SLACK_BOT_TOKEN`  | Slack Bot OAuth token           | Yes (if Slack enabled) |
 | `SLACK_CHANNEL_ID` | Slack channel for notifications | Yes (if Slack enabled) |
-| `JWT_SECRET` | JWT signing secret | Yes |
-| `AI_API_KEY` | Gemini API key for embeddings | Yes |
-| `AGENT_URL` | Agent service URL | Yes |
+| `JWT_SECRET`       | JWT signing secret              | Yes                    |
+| `AI_API_KEY`       | Gemini API key for embeddings   | Yes                    |
+| `AGENT_URL`        | Agent service URL               | Yes                    |
 
 ### Agent Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GEMINI_API_KEY` | Gemini API key for Strands Agents | Yes |
-| `PROMETHEUS_URL` | Prometheus base URL | No |
-| `SESSION_DB_HOST` | PostgreSQL host for session storage | No |
+| Variable          | Description                         | Required |
+| ----------------- | ----------------------------------- | -------- |
+| `GEMINI_API_KEY`  | Gemini API key for Strands Agents   | Yes      |
+| `PROMETHEUS_URL`  | Prometheus base URL                 | No       |
+| `SESSION_DB_HOST` | PostgreSQL host for session storage | No       |
 
 For full configuration options, see the [Helm chart values](../../helm-charts/charts/kube-rca/README.md).
 

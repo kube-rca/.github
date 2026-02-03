@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React">
   <img src="https://img.shields.io/badge/Helm-3-0F1689?style=flat-square&logo=helm" alt="Helm">
-  <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
 </p>
 
 ---
@@ -26,7 +26,7 @@ When alerts fire in your cluster, KubeRCA:
 
 1. Receives alerts via Alertmanager webhook
 2. Collects relevant logs, metrics, and Kubernetes events
-3. Analyzes the context using AI (Gemini/Strands Agents)
+3. Analyzes the context using AI (Strands Agents: Gemini/OpenAI/Anthropic)
 4. Provides RCA summaries and recommended actions
 5. Searches similar past incidents for reference
 
@@ -35,7 +35,7 @@ When alerts fire in your cluster, KubeRCA:
 ## Features
 
 - **Automated Context Collection** - Gather logs, metrics, and K8s events when alerts fire
-- **AI-Powered Analysis** - LLM-based root cause analysis with Strands Agents (Gemini)
+- **AI-Powered Analysis** - LLM-based root cause analysis with Strands Agents (Gemini/OpenAI/Anthropic)
 - **Similar Incident Search** - Vector similarity search using pgvector
 - **Slack Integration** - Real-time notifications with threaded analysis results
 - **Web Dashboard** - React-based UI for incident management
@@ -50,7 +50,7 @@ flowchart LR
   %% External
   AM[Alertmanager]
   SL[Slack]
-  LLM[Gemini API]
+  LLM[LLM API<br/>(Gemini/OpenAI/Anthropic)]
   PR[Prometheus]
   K8S[Kubernetes API]
 
@@ -108,7 +108,7 @@ flowchart LR
 | **IaC**        | Terraform                         |
 | **Monitoring** | Prometheus, Alertmanager, Grafana |
 | **Logging**    | Loki, Grafana Alloy               |
-| **AI/LLM**     | Google Gemini API                 |
+| **AI/LLM**     | Strands Agents (Gemini/OpenAI/Anthropic) |
 
 ### Testing
 
@@ -125,47 +125,45 @@ flowchart LR
 
 - Kubernetes cluster (1.25+)
 - Helm 3.x
-- PostgreSQL with pgvector extension
-- Gemini API key
+- AI provider API key (Gemini / OpenAI / Anthropic)
+- PostgreSQL with pgvector extension (bundled subchart or external)
+- Slack bot token + channel ID (optional)
 
-### Installation via Helm
+### Installation via Helm (OCI, Public ECR)
 
 ```bash
-# Add the chart repository (if published) or use local charts
-helm repo add kube-rca https://your-chart-repo.example.com
-helm repo update
+# Optional: login to Public ECR (if your environment requires it)
+aws ecr-public get-login-password --region us-east-1 | \
+  helm registry login --username AWS --password-stdin public.ecr.aws
 
-# Install with minimal configuration
-helm install kube-rca kube-rca/kube-rca \
-  --namespace kube-rca \
-  --create-namespace \
-  --set agent.gemini.secret.existingSecret=your-gemini-secret \
-  --set backend.postgresql.host=your-postgres-host
+# Install/upgrade (chart version from charts/kube-rca/Chart.yaml)
+helm upgrade --install kube-rca oci://public.ecr.aws/r5b7j2e4/kube-rca-ecr/kube-rca \
+  --namespace kube-rca --create-namespace \
+  --version 0.3.0 \
+  -f values.yaml
 ```
 
-### Installation from Source
+### Installation from Source (Local Chart)
 
 ```bash
-# Clone the repository
 git clone https://github.com/your-org/kube-rca.git
-cd kube-rca/helm-charts
+cd kube-rca/helm-charts/main
 
-# Install the chart
-helm install kube-rca charts/kube-rca \
-  --namespace kube-rca \
-  --create-namespace \
-  -f your-values.yaml
+helm upgrade --install kube-rca charts/kube-rca \
+  --namespace kube-rca --create-namespace \
+  -f values.yaml
 ```
 
-### Minimal values.yaml Example
+### values.yaml Example (Gemini)
 
 ```yaml
-# Backend configuration
 backend:
+  embedding:
+    provider: "gemini"
+    apiKey:
+      existingSecret: "kube-rca-ai"
+      key: "ai-studio-api-key"
   postgresql:
-    host: "postgresql.kube-rca.svc.cluster.local"
-    database: "kube-rca"
-    user: "kube-rca"
     secret:
       existingSecret: "postgresql"
       key: "password"
@@ -173,13 +171,9 @@ backend:
     enabled: true
     secret:
       existingSecret: "kube-rca-slack"
-  auth:
-    admin:
-      username: "admin"
-      password: "changeme"
 
-# Agent configuration
 agent:
+  aiProvider: "gemini"
   gemini:
     secret:
       existingSecret: "kube-rca-ai"
@@ -187,13 +181,14 @@ agent:
   prometheus:
     url: "http://prometheus-server.monitoring:9090"
 
-# Frontend configuration
 frontend:
   ingress:
     enabled: true
     hosts:
       - kube-rca.example.com
 ```
+
+> For OpenAI/Anthropic, set `agent.aiProvider` to `openai` or `anthropic` and point `agent.openai.secret` / `agent.anthropic.secret` to the corresponding secret key (`openai-api-key` / `anthropic-api-key`).
 
 ### Configure Alertmanager
 
@@ -203,7 +198,7 @@ Add the KubeRCA webhook receiver to your Alertmanager configuration:
 receivers:
   - name: "kube-rca"
     webhook_configs:
-      - url: "http://kube-rca-backend.kube-rca:8080/webhook/alertmanager"
+      - url: "http://<release>-backend.<namespace>.svc.cluster.local:8080/webhook/alertmanager"
         send_resolved: true
 
 route:
@@ -211,30 +206,22 @@ route:
   # or add as a child route
 ```
 
+Example (release: `kube-rca`, namespace: `kube-rca`):
+`http://kube-rca-backend.kube-rca.svc.cluster.local:8080/webhook/alertmanager`
+
 ---
 
 ## Configuration
 
-### Backend Environment Variables
+### Secrets (Default Names)
 
-| Variable           | Description                     | Required               |
-| ------------------ | ------------------------------- | ---------------------- |
-| `DATABASE_URL`     | PostgreSQL connection string    | Yes                    |
-| `SLACK_BOT_TOKEN`  | Slack Bot OAuth token           | Yes (if Slack enabled) |
-| `SLACK_CHANNEL_ID` | Slack channel for notifications | Yes (if Slack enabled) |
-| `JWT_SECRET`       | JWT signing secret              | Yes                    |
-| `AI_API_KEY`       | Gemini API key for embeddings   | Yes                    |
-| `AGENT_URL`        | Agent service URL               | Yes                    |
+| Secret | Keys | Notes |
+| --- | --- | --- |
+| `postgresql` | `postgres-password`, `password` | PostgreSQL (Bitnami subchart) |
+| `kube-rca-ai` | `ai-studio-api-key` / `openai-api-key` / `anthropic-api-key` | Keys depend on `agent.aiProvider` / `backend.embedding.provider` |
+| `kube-rca-slack` | `kube-rca-slack-token`, `kube-rca-slack-channel-id` | Required if Slack enabled |
 
-### Agent Environment Variables
-
-| Variable          | Description                         | Required |
-| ----------------- | ----------------------------------- | -------- |
-| `GEMINI_API_KEY`  | Gemini API key for Strands Agents   | Yes      |
-| `PROMETHEUS_URL`  | Prometheus base URL                 | No       |
-| `SESSION_DB_HOST` | PostgreSQL host for session storage | No       |
-
-For full configuration options, see the [Helm chart values](../../helm-charts/charts/kube-rca/README.md).
+For full configuration options, see the Helm chart values at `helm-charts/main/charts/kube-rca/README.md`.
 
 ---
 
@@ -295,7 +282,7 @@ Contributions are welcome! Please read our contributing guidelines before submit
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](../../LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
 
 ---
 

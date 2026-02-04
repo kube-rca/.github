@@ -50,7 +50,7 @@ flowchart LR
   %% External
   AM[Alertmanager]
   SL[Slack]
-  LLM[LLM API<br/>(Gemini/OpenAI/Anthropic)]
+  LLM["LLM API\n(Gemini/OpenAI/Anthropic)"]
   PR[Prometheus]
   K8S[Kubernetes API]
 

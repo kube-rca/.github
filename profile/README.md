@@ -41,9 +41,6 @@ When alerts fire in your cluster, KubeRCA:
 - **Web Dashboard** - React-based UI for incident management
 - **Helm Deployment** - Easy installation via Helm charts
 
-Implemented today: Alertmanager webhook pipeline, Slack thread analysis, incident embedding search.
-Planned/expanding: Slack slash command workflow, deeper Tempo/Loki/Grafana/Alloy integration.
-
 ---
 
 ## Architecture
@@ -53,14 +50,14 @@ flowchart LR
   %% External
   AM[Alertmanager]
   SL[Slack Bot]
-  SC[Slack Slash Command 계획]
+  SC[Slack Slash Command]
   LLM[LLM API Gemini OpenAI Anthropic]
   PR[Prometheus]
   K8S[Kubernetes API]
-  TP[Tempo 계획]
-  LO[Loki 계획]
-  GK[Grafana 계획]
-  AL[Alloy 계획]
+  TP[Tempo]
+  LO[Loki]
+  GK[Grafana]
+  AL[Alloy]
 
   %% Internal
   subgraph KubeRCA
@@ -72,22 +69,22 @@ flowchart LR
 
   AM -->|Webhook| BE
   BE -->|Thread notification| SL
-  SC -.->|Slash query 계획| BE
+  SC -.->|Slash query| BE
   FE -->|REST API| BE
   BE -->|Analyze and summarize| AG
   AG -->|K8s Context| K8S
   AG -->|Metrics Query| PR
   AG -->|LLM Analysis| LLM
-  AG -.->|Trace Query 계획| TP
+  AG -.->|Trace Query| TP
   BE -->|Embeddings| LLM
   BE <-->|Data| PG
   AG -.->|Session optional| PG
-  AL -.->|Collector 계획| PR
-  AL -.->|Collector 계획| LO
-  AL -.->|Collector 계획| TP
-  GK -.->|Dashboard 계획| PR
-  GK -.->|Dashboard 계획| LO
-  GK -.->|Dashboard 계획| TP
+  AL -.->|Collector| PR
+  AL -.->|Collector| LO
+  AL -.->|Collector| TP
+  GK -.->|Dashboard| PR
+  GK -.->|Dashboard| LO
+  GK -.->|Dashboard| TP
 ```
 
 ### Component Flow

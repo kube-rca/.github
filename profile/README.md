@@ -41,6 +41,9 @@ When alerts fire in your cluster, KubeRCA:
 - **Web Dashboard** - React-based UI for incident management
 - **Helm Deployment** - Easy installation via Helm charts
 
+Implemented today: Alertmanager webhook pipeline, Slack thread analysis, incident embedding search.
+Planned/expanding: Slack slash command workflow, deeper Tempo/Loki/Grafana/Alloy integration.
+
 ---
 
 ## Architecture
@@ -49,29 +52,42 @@ When alerts fire in your cluster, KubeRCA:
 flowchart LR
   %% External
   AM[Alertmanager]
-  SL[Slack]
-  LLM["LLM API\n(Gemini/OpenAI/Anthropic)"]
+  SL[Slack Bot]
+  SC[Slack Slash Command 계획]
+  LLM[LLM API Gemini OpenAI Anthropic]
   PR[Prometheus]
   K8S[Kubernetes API]
+  TP[Tempo 계획]
+  LO[Loki 계획]
+  GK[Grafana 계획]
+  AL[Alloy 계획]
 
   %% Internal
   subgraph KubeRCA
-    FE[Frontend<br/>React + TypeScript]
-    BE[Backend<br/>Go + Gin]
-    AG[Agent<br/>Python + FastAPI]
-    PG[(PostgreSQL<br/>+ pgvector)]
+    FE[Frontend React TypeScript]
+    BE[Backend Go Gin]
+    AG[Agent Python FastAPI]
+    PG[(PostgreSQL pgvector)]
   end
 
   AM -->|Webhook| BE
-  BE -->|Notification| SL
+  BE -->|Thread notification| SL
+  SC -.->|Slash query 계획| BE
   FE -->|REST API| BE
-  BE -->|Analyze Request| AG
+  BE -->|Analyze and summarize| AG
   AG -->|K8s Context| K8S
   AG -->|Metrics Query| PR
   AG -->|LLM Analysis| LLM
+  AG -.->|Trace Query 계획| TP
   BE -->|Embeddings| LLM
   BE <-->|Data| PG
-  AG -.->|Session| PG
+  AG -.->|Session optional| PG
+  AL -.->|Collector 계획| PR
+  AL -.->|Collector 계획| LO
+  AL -.->|Collector 계획| TP
+  GK -.->|Dashboard 계획| PR
+  GK -.->|Dashboard 계획| LO
+  GK -.->|Dashboard 계획| TP
 ```
 
 ### Component Flow
@@ -139,7 +155,7 @@ aws ecr-public get-login-password --region us-east-1 | \
 # Install/upgrade (chart version from charts/kube-rca/Chart.yaml)
 helm upgrade --install kube-rca oci://public.ecr.aws/r5b7j2e4/kube-rca-ecr/kube-rca \
   --namespace kube-rca --create-namespace \
-  --version 0.3.0 \
+  --version <chart-version> \
   -f values.yaml
 ```
 
@@ -230,7 +246,7 @@ For full configuration options, see the Helm chart values at `helm-charts/main/c
 ### Backend (Go)
 
 ```bash
-cd backend
+cd backend/main
 go mod tidy
 go run .
 # or
@@ -240,7 +256,7 @@ go test ./...
 ### Agent (Python)
 
 ```bash
-cd agent
+cd agent/main
 make install   # uv sync
 make lint      # ruff check
 make test      # pytest
@@ -250,7 +266,7 @@ make run       # uvicorn dev server
 ### Frontend (React)
 
 ```bash
-cd frontend
+cd frontend/main
 npm ci
 npm run dev    # development server
 npm run build  # production build
@@ -263,7 +279,7 @@ npm run lint   # eslint
 
 - [Architecture Details](../ARCHITECTURE.md)
 - [Project Background](../PROJECT.md)
-- [Helm Chart Values](../../helm-charts/charts/kube-rca/README.md)
+- [Helm Chart Values](https://github.com/kube-rca/helm-charts/blob/main/charts/kube-rca/README.md)
 - [Sequence Diagrams](../diagrams/)
 
 ---

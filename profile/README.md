@@ -150,7 +150,7 @@ aws ecr-public get-login-password --region us-east-1 | \
   helm registry login --username AWS --password-stdin public.ecr.aws
 
 # Install/upgrade (chart version from charts/kube-rca/Chart.yaml)
-helm upgrade --install kube-rca oci://public.ecr.aws/r5b7j2e4/kube-rca-ecr/kube-rca \
+helm upgrade --install kube-rca oci://public.ecr.aws/r5b7j2e4/kube-rca-ecr/charts/kube-rca \
   --namespace kube-rca --create-namespace \
   --version <chart-version> \
   -f values.yaml

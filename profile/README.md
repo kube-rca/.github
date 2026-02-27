@@ -38,6 +38,7 @@ When alerts fire in your cluster, KubeRCA:
 - **AI-Powered Analysis** - LLM-based root cause analysis with Strands Agents (Gemini/OpenAI/Anthropic)
 - **Similar Incident Search** - Vector similarity search using pgvector
 - **Slack Integration** - Real-time notifications with threaded analysis results
+- **Google OIDC Login** - One-click Google authentication with email allowlist
 - **Web Dashboard** - React-based UI for incident management
 - **Helm Deployment** - Easy installation via Helm charts
 
@@ -75,6 +76,8 @@ flowchart LR
   AG -->|LLM Analysis| LLM
   AG -.->|Trace Query| TP
   BE -->|Embeddings| LLM
+  BE -.->|OIDC Token Exchange| OIDC[Google OIDC]
+  FE -.->|OIDC Redirect| OIDC
   BE <-->|Data| PG
   AG -.->|Session optional| PG
   AL -.->|Collector| PR
@@ -231,6 +234,7 @@ Example (release: `kube-rca`, namespace: `kube-rca`):
 | `postgresql` | `postgres-password`, `password` | PostgreSQL (Bitnami subchart) |
 | `kube-rca-ai` | `ai-studio-api-key` / `openai-api-key` / `anthropic-api-key` | Keys depend on `agent.aiProvider` / `backend.embedding.provider` |
 | `kube-rca-slack` | `kube-rca-slack-token`, `kube-rca-slack-channel-id` | Required if Slack enabled |
+| `kube-rca-auth` | `admin-username`, `admin-password`, `kube-rca-jwt-secret`, `oidc-client-id`, `oidc-client-secret` | Auth + OIDC (via ExternalSecret or manual) |
 
 For full configuration options, see the Helm chart values at `helm-charts/main/charts/kube-rca/README.md`.
 

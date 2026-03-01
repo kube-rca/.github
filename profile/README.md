@@ -25,10 +25,10 @@ KubeRCA is an open-source tool that automatically collects incident context from
 When alerts fire in your cluster, KubeRCA:
 
 1. Receives alerts via Alertmanager webhook
-2. Collects relevant logs, metrics, and Kubernetes events
-3. Analyzes the context using AI (Strands Agents: Gemini/OpenAI/Anthropic)
-4. Provides RCA summaries and recommended actions
-5. Searches similar past incidents for reference
+2. Creates/updates incidents and sends Slack thread notifications
+3. Analyzes context with AI (Strands Agents: Gemini/OpenAI/Anthropic)
+4. Streams realtime updates to the dashboard via SSE
+5. Supports similar incident search, feedback, and in-app chat workflows
 
 ---
 
@@ -38,6 +38,10 @@ When alerts fire in your cluster, KubeRCA:
 - **AI-Powered Analysis** - LLM-based root cause analysis with Strands Agents (Gemini/OpenAI/Anthropic)
 - **Similar Incident Search** - Vector similarity search using pgvector
 - **Slack Integration** - Real-time notifications with threaded analysis results
+- **Realtime Dashboard Sync** - Server-Sent Events (`/api/v1/events`) with polling fallback
+- **Operator Feedback Loop** - Vote/comment APIs for incidents and alerts
+- **In-App AI Chat** - Context-aware chat via Backend `POST /api/v1/chat` and Agent `POST /chat`
+- **Webhook Settings UI** - CRUD management for outbound webhook integrations
 - **Google OIDC Login** - One-click Google authentication with email allowlist
 - **Web Dashboard** - React-based UI for incident management
 - **Helm Deployment** - Easy installation via Helm charts
@@ -58,6 +62,7 @@ flowchart LR
   LO[Loki]
   GK[Grafana]
   AL[Alloy]
+  OIDC[Google OIDC]
 
   %% Internal
   subgraph KubeRCA
@@ -69,14 +74,16 @@ flowchart LR
 
   AM -->|Webhook| BE
   BE -->|Thread notification| SL
-  FE -->|REST API| BE
+  FE -->|Auth Incident Alert API| BE
+  FE -->|SSE stream| BE
   BE -->|Analyze and summarize| AG
+  BE -->|Chat request| AG
   AG -->|K8s Context| K8S
   AG -->|Metrics Query| PR
   AG -->|LLM Analysis| LLM
   AG -.->|Trace Query| TP
   BE -->|Embeddings| LLM
-  BE -.->|OIDC Token Exchange| OIDC[Google OIDC]
+  BE -.->|OIDC Token Exchange| OIDC
   FE -.->|OIDC Redirect| OIDC
   BE <-->|Data| PG
   AG -.->|Session optional| PG
@@ -90,16 +97,16 @@ flowchart LR
 
 ### Component Flow
 
-| Step | Description                                               |
-| ---- | --------------------------------------------------------- |
-| 1    | Alertmanager sends alerts to Backend via webhook          |
-| 2    | Backend creates/updates Incident and stores Alert         |
-| 3    | Backend sends Slack notification (with thread tracking)   |
-| 4    | Backend requests analysis from Agent (async)              |
-| 5    | Agent collects K8s/Prometheus context                     |
-| 6    | Agent performs LLM analysis via Strands Agents            |
-| 7    | Backend stores analysis results and sends to Slack thread |
-| 8    | Frontend displays incidents with similar incident search  |
+| Step | Description |
+| ---- | ----------- |
+| 1 | Alertmanager sends alerts to Backend via webhook |
+| 2 | Backend creates/updates incidents, stores alerts, and posts Slack thread messages |
+| 3 | Backend requests `POST /analyze` to Agent asynchronously |
+| 4 | Agent collects K8s/Prometheus/Tempo context and calls LLM provider |
+| 5 | Backend stores analysis history (`alerts`, `alert_analyses`, `artifacts`) |
+| 6 | Backend emits SSE events and Frontend refreshes data in realtime |
+| 7 | Incident resolve triggers Agent `POST /summarize-incident` + embedding storage |
+| 8 | Frontend searches similar incidents, sends feedback, and uses in-app AI chat |
 
 ---
 

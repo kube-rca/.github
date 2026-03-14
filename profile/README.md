@@ -51,48 +51,32 @@ When alerts fire in your cluster, KubeRCA:
 ## Architecture
 
 ```mermaid
-flowchart LR
-  %% External
+flowchart TD
   AM[Alertmanager]
-  SL[Slack Bot]
-  LLM[LLM API Gemini OpenAI Anthropic]
-  PR[Prometheus]
+  SL[Slack]
+  LLM[LLM API]
   K8S[Kubernetes API]
+  PR[Prometheus]
   TP[Tempo]
-  LO[Loki]
-  GK[Grafana]
-  AL[Alloy]
-  OIDC[Google OIDC]
 
-  %% Internal
   subgraph KubeRCA
-    FE[Frontend React TypeScript]
-    BE[Backend Go Gin]
-    AG[Agent Python FastAPI]
-    PG[(PostgreSQL pgvector)]
+    FE[Frontend]
+    BE[Backend]
+    AG[Agent]
+    PG[(PostgreSQL)]
   end
 
   AM -->|Webhook| BE
-  BE -->|Thread notification| SL
-  FE -->|Auth Incident Alert API| BE
-  FE -->|SSE stream| BE
-  BE -->|Analyze and summarize| AG
-  BE -->|Chat request| AG
-  AG -->|K8s Context| K8S
-  AG -->|Metrics Query| PR
-  AG -->|LLM Analysis| LLM
+  BE -->|Notification| SL
+  FE -->|REST + SSE| BE
+  BE -->|Analyze / Summarize| AG
+  AG -->|K8s Query| K8S
+  AG -->|PromQL| PR
   AG -.->|Trace Query| TP
-  BE -->|Embeddings| LLM
-  BE -.->|OIDC Token Exchange| OIDC
-  FE -.->|OIDC Redirect| OIDC
+  AG -->|Inference| LLM
+  BE -->|Embedding| LLM
   BE <-->|Data| PG
-  AG -.->|Session optional| PG
-  AL -.->|Collector| PR
-  AL -.->|Collector| LO
-  AL -.->|Collector| TP
-  GK -.->|Dashboard| PR
-  GK -.->|Dashboard| LO
-  GK -.->|Dashboard| TP
+  AG -.->|Session| PG
 ```
 
 ### Component Flow

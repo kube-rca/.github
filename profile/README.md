@@ -28,7 +28,8 @@ When alerts fire in your cluster, KubeRCA:
 2. Creates/updates incidents and sends Slack thread notifications
 3. Analyzes context with AI (Strands Agents: Gemini/OpenAI/Anthropic)
 4. Streams realtime updates to the dashboard via SSE
-5. Supports similar incident search, feedback, and in-app chat workflows
+5. Allows manual alert resolve (single & bulk) when Alertmanager misses resolved events
+6. Supports similar incident search, feedback, and in-app chat workflows
 
 ---
 
@@ -37,6 +38,7 @@ When alerts fire in your cluster, KubeRCA:
 - **Automated Context Collection** - Gather logs, metrics, and K8s events when alerts fire
 - **AI-Powered Analysis** - LLM-based root cause analysis with Strands Agents (Gemini/OpenAI/Anthropic)
 - **Similar Incident Search** - Vector similarity search using pgvector
+- **Manual Alert Resolve** - Single & bulk resolve (up to 50) with Slack notification and AI analysis
 - **Slack Integration** - Real-time notifications with threaded analysis results
 - **Realtime Dashboard Sync** - Server-Sent Events (`/api/v1/events`) with polling fallback
 - **Operator Feedback Loop** - Vote/comment APIs for incidents and alerts
@@ -90,7 +92,8 @@ flowchart TD
 | 5 | Backend stores analysis history (`alerts`, `alert_analyses`, `artifacts`) |
 | 6 | Backend emits SSE events and Frontend refreshes data in realtime |
 | 7 | Incident resolve triggers Agent `POST /summarize-incident` + embedding storage |
-| 8 | Frontend searches similar incidents, sends feedback, and uses in-app AI chat |
+| 8 | Manual alert resolve (`POST /alerts/:id/resolve` or `/alerts/bulk-resolve`) with Slack + AI analysis |
+| 9 | Frontend searches similar incidents, sends feedback, and uses in-app AI chat |
 
 ---
 
@@ -180,6 +183,7 @@ backend:
 agent:
   aiProvider: "gemini"
   gemini:
+    modelId: "gemini-2.5-flash"  # or gemini-2.5-pro
     secret:
       existingSecret: "kube-rca-ai"
       key: "ai-studio-api-key"
@@ -193,7 +197,7 @@ frontend:
       - kube-rca.example.com
 ```
 
-> For OpenAI/Anthropic, set `agent.aiProvider` to `openai` or `anthropic` and point `agent.openai.secret` / `agent.anthropic.secret` to the corresponding secret key (`openai-api-key` / `anthropic-api-key`).
+> For OpenAI/Anthropic, set `agent.aiProvider` to `openai` or `anthropic`, configure `agent.openai.modelId` / `agent.anthropic.modelId` (e.g., `gpt-4o`, `claude-sonnet-4-20250514`), and point `agent.openai.secret` / `agent.anthropic.secret` to the corresponding secret key.
 
 ### Configure Alertmanager
 

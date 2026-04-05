@@ -5,7 +5,7 @@
 <h1 align="center">KubeRCA</h1>
 
 <p align="center">
-  <strong>AI-Powered Kubernetes Incident Analysis & Root Cause Analysis Tool</strong>
+  <strong>AI-powered Kubernetes incident analysis and Root Cause Analysis</strong>
 </p>
 
 <p align="center">
@@ -20,35 +20,32 @@
 
 ## Overview
 
-KubeRCA is an open-source tool that automatically collects incident context from Kubernetes environments and provides **Root Cause Analysis (RCA)** and response guides using LLM.
+KubeRCA is an open-source tool that turns Kubernetes alerts into actionable incident context, AI-assisted analysis, and operator workflows.
 
-When alerts fire in your cluster, KubeRCA:
+It is built for the gap between "an alert fired" and "we understand what happened." Instead of manually gathering logs, metrics, events, and past incident history, KubeRCA ingests alerts, collects evidence, runs RCA with LLM providers, and surfaces the results in Slack and a web dashboard.
 
-1. Receives alerts via Alertmanager webhook
-2. Creates/updates incidents and sends Slack thread notifications
-3. Analyzes context with AI (Strands Agents: Gemini/OpenAI/Anthropic)
-4. Streams realtime updates to the dashboard via SSE
-5. Allows manual alert resolve (single & bulk) when Alertmanager misses resolved events
-6. Supports similar incident search, feedback, and in-app chat workflows
+When alerts fire, KubeRCA:
 
----
+1. Receives alerts from Alertmanager.
+2. Creates or updates incidents and stores alert history.
+3. Collects Kubernetes and observability context for RCA.
+4. Publishes analysis to Slack threads and the dashboard.
+5. Supports follow-up workflows such as manual resolve, similarity search, feedback, and in-app chat.
 
 ## Features
 
-- **Automated Context Collection** - Gather logs, metrics, and K8s events when alerts fire
-- **AI-Powered Analysis** - LLM-based root cause analysis with Strands Agents (Gemini/OpenAI/Anthropic)
-- **Similar Incident Search** - Vector similarity search using pgvector
-- **Manual Alert Resolve** - Single & bulk resolve (up to 50) with Slack notification and AI analysis
-- **Slack Integration** - Real-time notifications with threaded analysis results
-- **Realtime Dashboard Sync** - Server-Sent Events (`/api/v1/events`) with polling fallback
-- **Operator Feedback Loop** - Vote/comment APIs for incidents and alerts
-- **In-App AI Chat** - Context-aware chat via Backend `POST /api/v1/chat` and Agent `POST /chat`
-- **Webhook Settings UI** - CRUD management for outbound webhook integrations
-- **Google OIDC Login** - One-click Google authentication with email allowlist
-- **Web Dashboard** - React-based UI for incident management
-- **Helm Deployment** - Easy installation via Helm charts
-
----
+- **Alert-driven incident intake**: Receive alerts through Alertmanager webhook integration and map them into incidents and alerts automatically.
+- **AI-powered RCA**: Run analysis with Strands Agents using `gemini`, `openai`, or `anthropic` providers.
+- **Context collection**: Gather Kubernetes, Prometheus, and Tempo context around the affected workload.
+- **Slack thread delivery**: Post incident updates and RCA summaries back into threaded Slack notifications.
+- **Manual alert resolve**: Resolve alerts individually or in bulk when Alertmanager resolution signals are missing or delayed.
+- **Similar incident search**: Store embeddings in PostgreSQL + pgvector and find related past incidents.
+- **Realtime dashboard sync**: Stream updates to the UI through SSE with polling fallback.
+- **Operator feedback loop**: Capture votes and comments on incident and alert analyses.
+- **Context-aware AI chat**: Ask follow-up questions through the in-app chat flow backed by the Agent service.
+- **Webhook settings UI**: Manage outbound webhook integrations from the application UI.
+- **Google OIDC support**: Enable SSO alongside local auth flows.
+- **Helm-based deployment**: Install the full stack into Kubernetes through the `kube-rca` chart.
 
 ## Architecture
 
@@ -56,7 +53,7 @@ When alerts fire in your cluster, KubeRCA:
 flowchart TD
   AM[Alertmanager]
   SL[Slack]
-  LLM[LLM API]
+  LLM[LLM Provider]
   K8S[Kubernetes API]
   PR[Prometheus]
   TP[Tempo]
@@ -65,237 +62,138 @@ flowchart TD
     FE[Frontend]
     BE[Backend]
     AG[Agent]
-    PG[(PostgreSQL)]
+    DB[(PostgreSQL + pgvector)]
   end
 
   AM -->|Webhook| BE
-  BE -->|Notification| SL
-  FE -->|REST + SSE| BE
-  BE -->|Analyze / Summarize| AG
-  AG -->|K8s Query| K8S
-  AG -->|PromQL| PR
-  AG -.->|Trace Query| TP
+  FE <-->|REST + SSE| BE
+  BE -->|Analyze / Summarize / Chat| AG
+  BE -->|Thread notifications| SL
+  BE <-->|Incidents / alerts / embeddings| DB
+  AG -->|Cluster context| K8S
+  AG -->|Metrics| PR
+  AG -.->|Trace context| TP
   AG -->|Inference| LLM
-  BE -->|Embedding| LLM
-  BE <-->|Data| PG
-  AG -.->|Session| PG
 ```
 
-### Component Flow
-
-| Step | Description |
-| ---- | ----------- |
-| 1 | Alertmanager sends alerts to Backend via webhook |
-| 2 | Backend creates/updates incidents, stores alerts, and posts Slack thread messages |
-| 3 | Backend requests `POST /analyze` to Agent asynchronously |
-| 4 | Agent collects K8s/Prometheus/Tempo context and calls LLM provider |
-| 5 | Backend stores analysis history (`alerts`, `alert_analyses`, `artifacts`) |
-| 6 | Backend emits SSE events and Frontend refreshes data in realtime |
-| 7 | Incident resolve triggers Agent `POST /summarize-incident` + embedding storage |
-| 8 | Manual alert resolve (`POST /alerts/:id/resolve` or `/alerts/bulk-resolve`) with Slack + AI analysis |
-| 9 | Frontend searches similar incidents, sends feedback, and uses in-app AI chat |
-
----
-
-## Tech Stack
-
-### Application
-
-| Component    | Technology                                  |
-| ------------ | ------------------------------------------- |
-| **Backend**  | Go 1.24 + Gin                               |
-| **Agent**    | Python 3.10+ + FastAPI + Strands Agents     |
-| **Frontend** | React 18 + TypeScript + Vite + Tailwind CSS |
-| **Database** | PostgreSQL + pgvector                       |
-
-### Infrastructure & Observability
-
-| Category       | Technology                        |
-| -------------- | --------------------------------- |
-| **Deployment** | Helm, ArgoCD                      |
-| **IaC**        | Terraform                         |
-| **Monitoring** | Prometheus, Alertmanager, Grafana |
-| **Logging**    | Loki, Grafana Alloy               |
-| **AI/LLM**     | Strands Agents (Gemini/OpenAI/Anthropic) |
-
-### Testing
-
-| Category              | Technology |
-| --------------------- | ---------- |
-| **Chaos Engineering** | Chaos Mesh |
-| **Load Testing**      | k6         |
-
----
+For runtime flows and component responsibilities, see the [Architecture Details](https://github.com/kube-rca/kuberca/blob/main/docs/ARCHITECTURE.md).
 
 ## Quick Start
 
 ### Prerequisites
 
-- Kubernetes cluster (1.25+)
+- Kubernetes cluster (v1.32+)
 - Helm 3.x
-- AI provider API key (Gemini / OpenAI / Anthropic)
-- PostgreSQL with pgvector extension (bundled subchart or external)
-- Slack bot token + channel ID (optional)
+- An API key for one supported AI provider
+- Alertmanager for automatic alert ingestion
 
-### Installation via Helm (OCI, Public ECR)
+Slack, OIDC, and external PostgreSQL are optional. You can start with the bundled PostgreSQL chart and no Slack integration.
+If you want browser access through Ingress, make sure an Ingress controller is installed in your cluster.
+
+### Installation via Helm (OCI)
 
 ```bash
-# Optional: login to Public ECR (if your environment requires it)
-aws ecr-public get-login-password --region us-east-1 | \
-  helm registry login --username AWS --password-stdin public.ecr.aws
-
-# Install/upgrade (chart version from charts/kube-rca/Chart.yaml)
 helm upgrade --install kube-rca oci://public.ecr.aws/r5b7j2e4/kube-rca-ecr/charts/kube-rca \
   --namespace kube-rca --create-namespace \
-  --version 0.7.0 \
   -f values.yaml
 ```
 
-### Installation from Source (Local Chart)
+### Installation from Source
 
 ```bash
-git clone https://github.com/your-org/kube-rca.git
-cd kube-rca/helm-charts/main
+git clone https://github.com/kube-rca/kuberca.git
+cd kuberca
 
-helm upgrade --install kube-rca charts/kube-rca \
+helm upgrade --install kube-rca ./charts/kube-rca \
   --namespace kube-rca --create-namespace \
   -f values.yaml
 ```
 
-### values.yaml Example (Gemini)
+### Minimal values.yaml
 
 ```yaml
+postgresql:
+  auth:
+    existingSecret: ""
+    password: "change-me"
+
 backend:
-  embedding:
-    provider: "gemini"
-    apiKey:
-      existingSecret: "kube-rca-ai"
-      key: "ai-studio-api-key"
+  slack:
+    enabled: false
   postgresql:
     secret:
-      existingSecret: "postgresql"
-      key: "password"
-  slack:
-    enabled: true
-    secret:
-      existingSecret: "kube-rca-slack"
+      existingSecret: ""
+  embedding:
+    apiKey:
+      existingSecret: ""
 
 agent:
   aiProvider: "gemini"
   gemini:
-    modelId: "gemini-2.5-flash"  # or gemini-2.5-pro
+    apiKey: "YOUR_GEMINI_API_KEY"
     secret:
-      existingSecret: "kube-rca-ai"
-      key: "ai-studio-api-key"
-  prometheus:
-    url: "http://prometheus-server.monitoring:9090"
+      existingSecret: ""
 
 frontend:
   ingress:
     enabled: true
     hosts:
-      - kube-rca.example.com
+      - "kube-rca.example.com"
 ```
 
-> For OpenAI/Anthropic, set `agent.aiProvider` to `openai` or `anthropic`, configure `agent.openai.modelId` / `agent.anthropic.modelId` (e.g., `gpt-4o`, `claude-sonnet-4-20250514`), and point `agent.openai.secret` / `agent.anthropic.secret` to the corresponding secret key.
-
 ### Configure Alertmanager
-
-Add the KubeRCA webhook receiver to your Alertmanager configuration:
 
 ```yaml
 receivers:
   - name: "kube-rca"
     webhook_configs:
-      - url: "http://<release>-backend.<namespace>.svc.cluster.local:8080/webhook/alertmanager"
+      - url: "http://kube-rca-backend.kube-rca.svc.cluster.local:8080/webhook/alertmanager"
         send_resolved: true
 
 route:
   receiver: "kube-rca"
-  # or add as a child route
 ```
-
-Example (release: `kube-rca`, namespace: `kube-rca`):
-`http://kube-rca-backend.kube-rca.svc.cluster.local:8080/webhook/alertmanager`
-
----
-
-## Configuration
-
-### Secrets (Default Names)
-
-| Secret | Keys | Notes |
-| --- | --- | --- |
-| `postgresql` | `postgres-password`, `password` | PostgreSQL (Bitnami subchart) |
-| `kube-rca-ai` | `ai-studio-api-key` / `openai-api-key` / `anthropic-api-key` | Keys depend on `agent.aiProvider` / `backend.embedding.provider` |
-| `kube-rca-slack` | `kube-rca-slack-token`, `kube-rca-slack-channel-id` | Required if Slack enabled |
-| `kube-rca-auth` | `admin-username`, `admin-password`, `kube-rca-jwt-secret`, `oidc-client-id`, `oidc-client-secret` | Auth + OIDC (via ExternalSecret or manual) |
-
-For full configuration options, see the Helm chart values at `helm-charts/main/charts/kube-rca/README.md`.
-
----
 
 ## Local Development
 
-### Backend (Go)
-
 ```bash
-cd backend/main
-go mod tidy
-go run .
-# or
+# Backend
+cd backend
 go test ./...
-```
 
-### Agent (Python)
+# Agent
+cd agent
+make install
+make test
 
-```bash
-cd agent/main
-make install   # uv sync
-make lint      # ruff check
-make test      # pytest
-make run       # uvicorn dev server
-```
-
-### Frontend (React)
-
-```bash
-cd frontend/main
+# Frontend
+cd frontend
 npm ci
-npm run dev    # development server
-npm run build  # production build
-npm run lint   # eslint
-```
+npm run dev
 
----
+# Helm
+helm lint charts/kube-rca
+```
 
 ## Documentation
 
-- [Architecture Details](../ARCHITECTURE.md)
-- [Project Background](../PROJECT.md)
-- [Helm Chart Values](https://github.com/kube-rca/helm-charts/blob/main/charts/kube-rca/README.md)
-- [Sequence Diagrams](../diagrams/)
-
----
+- [Main Repository](https://github.com/kube-rca/kuberca)
+- [Architecture Details](https://github.com/kube-rca/kuberca/blob/main/docs/ARCHITECTURE.md)
+- [Project Background](https://github.com/kube-rca/kuberca/blob/main/docs/PROJECT.md)
+- [Installation Guide (Korean)](https://github.com/kube-rca/kuberca/blob/main/docs/installation-guide-ko.md)
+- [Helm Chart README](https://github.com/kube-rca/kuberca/blob/main/charts/kube-rca/README.md)
+- [Backend README](https://github.com/kube-rca/kuberca/blob/main/backend/README.md)
+- [Agent README](https://github.com/kube-rca/kuberca/blob/main/agent/README.md)
+- [Frontend README](https://github.com/kube-rca/kuberca/blob/main/frontend/README.md)
 
 ## Contributing
 
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
+Issues and pull requests are welcome. If you are changing behavior across backend, agent, frontend, or Helm values, keep the documentation aligned with the implementation.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
-
----
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/kube-rca/kuberca/blob/main/LICENSE) for details.
 
 <p align="center">
-  Made with dedication for the Kubernetes community
+  Made for Kubernetes operators who need faster incident context and RCA
 </p>

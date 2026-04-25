@@ -9,45 +9,84 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Go-1.24-00ADD8?style=flat-square&logo=go" alt="Go">
+  <a href="https://github.com/kube-rca/kuberca/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat-square" alt="License"></a>
+  <a href="https://github.com/kube-rca/kuberca/releases"><img src="https://img.shields.io/github/v/release/kube-rca/kuberca?style=flat-square&include_prereleases&sort=semver" alt="Latest release"></a>
+  <a href="https://github.com/kube-rca/kuberca/stargazers"><img src="https://img.shields.io/github/stars/kube-rca/kuberca?style=flat-square" alt="Stars"></a>
+  <a href="https://github.com/kube-rca/kuberca/actions/workflows/ci-backend.yaml"><img src="https://img.shields.io/github/actions/workflow/status/kube-rca/kuberca/ci-backend.yaml?style=flat-square&label=ci-backend" alt="CI"></a>
+  <img src="https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go" alt="Go">
   <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React">
   <img src="https://img.shields.io/badge/Helm-3-0F1689?style=flat-square&logo=helm" alt="Helm">
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
+</p>
+
+<p align="center">
+  <em>Turn Kubernetes alerts into actionable root-cause analysis — in seconds, not hours.</em>
+</p>
+
+> ⭐ <strong>If KubeRCA looks useful, please consider starring the <a href="https://github.com/kube-rca/kuberca">main repository</a>.</strong> It helps the project reach more operators and brings in more contributors.
+
+---
+
+## See It In Action
+
+A few screens from a running KubeRCA install. Dashboards correlate alerts to incidents, and every incident gets an LLM-generated RCA summary that lands in Slack and the UI together.
+
+### Incident Dashboard
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kube-rca/kuberca/main/docs/img/screenshot-incident-dashboard.png" alt="KubeRCA Incident Dashboard" width="900"/>
+</p>
+
+### Alert Dashboard
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kube-rca/kuberca/main/docs/img/screenshot-alert-dashboard.png" alt="KubeRCA Alert Dashboard" width="900"/>
+</p>
+
+### Slack — AI Analysis in Thread
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kube-rca/kuberca/main/docs/img/screenshot-slack-thread.png" alt="KubeRCA Slack Integration with AI Analysis" width="900"/>
+</p>
+
+### Incident Detail — Full RCA Report
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kube-rca/kuberca/main/docs/img/screenshot-incident-detail.png" alt="KubeRCA Incident detail with full RCA report" width="900"/>
+</p>
+
+### Alert Detail — Per-Alert AI Analysis
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kube-rca/kuberca/main/docs/img/screenshot-alert-analysis.png" alt="KubeRCA Alert detail with per-alert AI analysis" width="900"/>
 </p>
 
 ---
 
-## Overview
+## Why KubeRCA
 
 KubeRCA is an open-source tool that turns Kubernetes alerts into actionable incident context, AI-assisted analysis, and operator workflows.
 
-It is built for the gap between "an alert fired" and "we understand what happened." Instead of manually gathering logs, metrics, events, and past incident history, KubeRCA ingests alerts, collects evidence, runs RCA with LLM providers, and surfaces the results in Slack and a web dashboard.
+It is built for the gap between "an alert fired" and "we understand what happened." Instead of manually gathering evidence across Kubernetes, observability tools, chat, and dashboards, KubeRCA connects alert intake, RCA generation, Slack delivery, and incident search into one operator-facing flow.
 
-When alerts fire, KubeRCA:
+## When To Use It
 
-1. Receives alerts from Alertmanager.
-2. Creates or updates incidents and stores alert history.
-3. Collects Kubernetes and observability context for RCA.
-4. Publishes analysis to Slack threads and the dashboard.
-5. Supports follow-up workflows such as manual resolve, similarity search, feedback, and in-app chat.
+KubeRCA is a strong fit for teams that already use Alertmanager, want more consistent RCA, and need searchable incident history instead of one-off alert handling.
 
-## Features
+### Best Fit
 
-- **Alert-driven incident intake**: Receive alerts through Alertmanager webhook integration and map them into incidents and alerts automatically.
-- **AI-powered RCA**: Run analysis with Strands Agents using `gemini`, `openai`, or `anthropic` providers.
-- **Context collection**: Gather Kubernetes, Prometheus, and Tempo context around the affected workload.
-- **Slack thread delivery**: Post incident updates and RCA summaries back into threaded Slack notifications.
-- **Manual alert resolve**: Resolve alerts individually or in bulk when Alertmanager resolution signals are missing or delayed.
-- **Similar incident search**: Store embeddings in PostgreSQL + pgvector and find related past incidents.
-- **Realtime dashboard sync**: Stream updates to the UI through SSE with polling fallback.
-- **Operator feedback loop**: Capture votes and comments on incident and alert analyses.
-- **Context-aware AI chat**: Ask follow-up questions through the in-app chat flow backed by the Agent service.
-- **Webhook settings UI**: Manage outbound webhook integrations from the application UI.
-- **Google OIDC support**: Enable SSO alongside local auth flows.
-- **Helm-based deployment**: Install the full stack into Kubernetes through the `kube-rca` chart.
+- Kubernetes environments with Alertmanager-based alerting
+- Teams using Slack threads or dashboards during incident triage
+- Workloads where recurring incidents benefit from historical reuse
+- Organizations that want LLM-assisted triage without replacing their existing stack
 
-## Architecture
+### Not Optimized For
+
+- Log-only workflows without structured alerts
+- Fully autonomous remediation expectations
+- Generic APM replacement use cases
+
+## How It Works
 
 ```mermaid
 flowchart TD
@@ -76,21 +115,39 @@ flowchart TD
   AG -->|Inference| LLM
 ```
 
-For runtime flows and component responsibilities, see the [Architecture Details](https://github.com/kube-rca/kuberca/blob/main/docs/ARCHITECTURE.md).
+### Operator Flow
 
-## Quick Start
+1. Alertmanager sends alerts to the Backend.
+2. Backend creates or updates incidents and stores alert history.
+3. Agent collects Kubernetes and observability context, then runs RCA with an LLM provider.
+4. Results are published to Slack and streamed to the dashboard.
+5. Operators can resolve incidents, manually resolve alerts, search similar incidents, leave feedback, and use in-app chat.
 
-### Prerequisites
+Read the full runtime walkthrough in the [Architecture Details](https://github.com/kube-rca/kuberca/blob/main/docs/ARCHITECTURE.md).
 
-- Kubernetes cluster (v1.32+)
-- Helm 3.x
-- An API key for one supported AI provider
-- Alertmanager for automatic alert ingestion
+## Key Capabilities
 
-Slack, OIDC, and external PostgreSQL are optional. You can start with the bundled PostgreSQL chart and no Slack integration.
-If you want browser access through Ingress, make sure an Ingress controller is installed in your cluster.
+### Detection To RCA
 
-### Installation via Helm (OCI)
+- Alert-driven incident intake through Alertmanager
+- Kubernetes and observability context collection
+- Multi-provider RCA with `gemini`, `openai`, and `anthropic`
+
+### Operator Workflows
+
+- Slack thread delivery for incident and RCA updates
+- Realtime dashboard sync with SSE
+- Manual resolve, feedback, webhook settings, and context-aware chat
+
+### Search And Deployment
+
+- Similar incident search with PostgreSQL + pgvector
+- Local auth and Google OIDC support
+- Helm-based deployment for Kubernetes environments
+
+## Quick Evaluation
+
+### 1. Install The Stack
 
 ```bash
 helm upgrade --install kube-rca oci://public.ecr.aws/r5b7j2e4/kube-rca-ecr/charts/kube-rca \
@@ -98,101 +155,56 @@ helm upgrade --install kube-rca oci://public.ecr.aws/r5b7j2e4/kube-rca-ecr/chart
   -f values.yaml
 ```
 
-### Installation from Source
+### 2. Connect Alertmanager
 
-```bash
-git clone https://github.com/kube-rca/kuberca.git
-cd kuberca
+Point your Alertmanager receiver at:
 
-helm upgrade --install kube-rca ./charts/kube-rca \
-  --namespace kube-rca --create-namespace \
-  -f values.yaml
+```text
+http://kube-rca-backend.kube-rca.svc.cluster.local:8080/webhook/alertmanager
 ```
 
-### Minimal values.yaml
+### 3. Walk Through The First Incident
 
-```yaml
-postgresql:
-  auth:
-    existingSecret: ""
-    password: "change-me"
+- Trigger or forward an alert
+- Verify analysis arrives in the dashboard
+- Enable Slack if you want threaded incident delivery
 
-backend:
-  slack:
-    enabled: false
-  postgresql:
-    secret:
-      existingSecret: ""
-  embedding:
-    apiKey:
-      existingSecret: ""
-
-agent:
-  aiProvider: "gemini"
-  gemini:
-    apiKey: "YOUR_GEMINI_API_KEY"
-    secret:
-      existingSecret: ""
-
-frontend:
-  ingress:
-    enabled: true
-    hosts:
-      - "kube-rca.example.com"
-```
-
-### Configure Alertmanager
-
-```yaml
-receivers:
-  - name: "kube-rca"
-    webhook_configs:
-      - url: "http://kube-rca-backend.kube-rca.svc.cluster.local:8080/webhook/alertmanager"
-        send_resolved: true
-
-route:
-  receiver: "kube-rca"
-```
-
-## Local Development
-
-```bash
-# Backend
-cd backend
-go test ./...
-
-# Agent
-cd agent
-make install
-make test
-
-# Frontend
-cd frontend
-npm ci
-npm run dev
-
-# Helm
-helm lint charts/kube-rca
-```
+For installation details and step-by-step setup, use the documents below.
 
 ## Documentation
 
 - [Main Repository](https://github.com/kube-rca/kuberca)
 - [Architecture Details](https://github.com/kube-rca/kuberca/blob/main/docs/ARCHITECTURE.md)
 - [Project Background](https://github.com/kube-rca/kuberca/blob/main/docs/PROJECT.md)
-- [Installation Guide (Korean)](https://github.com/kube-rca/kuberca/blob/main/docs/installation-guide-ko.md)
+- 한국어 — [설치 가이드](https://github.com/kube-rca/kuberca/blob/main/docs/installation-guide-ko.md)
+- English — [Installation Guide](https://github.com/kube-rca/kuberca/blob/main/docs/installation-guide-en.md)
+- [Troubleshooting](https://github.com/kube-rca/kuberca/blob/main/docs/TROUBLESHOOTING.md)
+- [FAQ](https://github.com/kube-rca/kuberca/blob/main/docs/FAQ.md)
 - [Helm Chart README](https://github.com/kube-rca/kuberca/blob/main/charts/kube-rca/README.md)
 - [Backend README](https://github.com/kube-rca/kuberca/blob/main/backend/README.md)
 - [Agent README](https://github.com/kube-rca/kuberca/blob/main/agent/README.md)
 - [Frontend README](https://github.com/kube-rca/kuberca/blob/main/frontend/README.md)
 
+## Community
+
+- [GitHub Discussions](https://github.com/kube-rca/kuberca/discussions) — questions, ideas, and proposals
+- [Issues](https://github.com/kube-rca/kuberca/issues) — bug reports and feature requests (use the templates)
+- [Security](https://github.com/kube-rca/kuberca/security/advisories/new) — private vulnerability reporting
+
 ## Contributing
 
-Issues and pull requests are welcome. If you are changing behavior across backend, agent, frontend, or Helm values, keep the documentation aligned with the implementation.
+Issues, pull requests, and design feedback are all welcome. Before opening a PR, please read:
+
+- [CONTRIBUTING.md](https://github.com/kube-rca/kuberca/blob/main/CONTRIBUTING.md) — development setup per component, Conventional Commits, DCO sign-off, PR workflow
+- [CODE_OF_CONDUCT.md](https://github.com/kube-rca/kuberca/blob/main/CODE_OF_CONDUCT.md) — community expectations
+- [GOVERNANCE.md](https://github.com/kube-rca/kuberca/blob/main/GOVERNANCE.md) — roles, decision making, and how Maintainers are added
+- [SECURITY.md](https://github.com/kube-rca/kuberca/blob/main/SECURITY.md) — how to report vulnerabilities privately
+
+> ⭐ Liked what you saw? A star on the [main repository](https://github.com/kube-rca/kuberca) is the simplest way to help the project grow.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/kube-rca/kuberca/blob/main/LICENSE) for details.
+This project is licensed under the **Apache License, Version 2.0**. See [LICENSE](https://github.com/kube-rca/kuberca/blob/main/LICENSE) and [NOTICE](https://github.com/kube-rca/kuberca/blob/main/NOTICE) for details.
 
 <p align="center">
   Made for Kubernetes operators who need faster incident context and RCA
